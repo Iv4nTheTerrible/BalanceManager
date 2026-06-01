@@ -1,4 +1,13 @@
-def show_transactions():
+def add():
+    transaction_type = input('Type:')
+    amount = int(input('Amount:'))
+    description = input('description:')
+    new_transaction = {
+    'type':transaction_type,
+    'amount':amount,
+    'description': description}
+    transactions.append(new_transaction)
+def show_transactions(transactions):
     for item in transactions:
         print("="*20)
         print(f"{item['type']} \nAmount: {item['amount']} \nDescription: {item['description']}")
@@ -31,6 +40,16 @@ transactions = [
 }
 ]
 
-show_transactions()
-current_balance = calculate_balance(transactions)
-print(current_balance)
+
+
+while True:
+    print('Hi user! \n1. Add transaction \n2. Show transactions\n3. Show balance\n4. Exit')
+    user_input = int(input('>'))
+    if user_input == 1:
+        add()
+    elif user_input == 2:
+        show_transactions(transactions)
+    elif user_input == 3:
+        print(calculate_balance(transactions))
+    elif user_input == 4:
+        break

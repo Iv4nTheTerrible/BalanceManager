@@ -1,12 +1,19 @@
+import json
+
 def add():
+
     transaction_type = input('Type:')
     amount = int(input('Amount:'))
     description = input('description:')
     new_transaction = {
     'type':transaction_type,
     'amount':amount,
-    'description': description}
+    'description': description
+    }       
     transactions.append(new_transaction)
+    with open("transactions.json","w") as file:
+        json.dump(transactions, file)
+
 def show_transactions(transactions):
     for item in transactions:
         print("="*20)
@@ -22,25 +29,11 @@ def calculate_balance(transactions):
                 balance -= item['amount']
     return balance
 
-transactions = [
-{
-'type' : 'income',
-'amount' : 60000,
-'description' : 'baito'
-},
-{
-'type' : 'expense',
-'amount' : 9500,
-'description' : 'les mis book'
-},
-{
-'type' : 'expense',
-'amount' : 1000,
-'description' : 'food'
-}
-]
-
-
+try:
+    with open("transactions.json","r") as file:
+            transactions = json.load(file)
+except FileNotFoundError: 
+    transactions = []
 
 while True:
     print('Hi user! \n1. Add transaction \n2. Show transactions\n3. Show balance\n4. Exit')

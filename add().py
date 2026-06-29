@@ -19,7 +19,6 @@ try:
             transactions = json.load(file)
 except FileNotFoundError:
     transactions = []
-
 while True:
     add()
     print(transactions)

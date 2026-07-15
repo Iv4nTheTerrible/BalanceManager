@@ -19,6 +19,15 @@ def get_int(txt):
             print("Error, value invalid. Try again.")
 
 
+def get_amount():
+    while True:
+        num = get_int("Amount:")
+        if num < 0:
+            print("Invalid value. Please insert a number greater than or equal 0.")
+        else:
+            return num
+
+
 def get_type():
     user_input = input("Select type INCOME or EXPENSE.\n[I/E]:")
     while True:
@@ -35,7 +44,7 @@ def get_type():
 def add():
     new_id = data["next_id"]
     transaction_type = get_type()
-    amount = get_int("Amount:")
+    amount = get_amount()
     description = input("Description:")
     calendar_and_clock = datetime.now().strftime("%Y/%m/%d %H:%M")
 
@@ -103,7 +112,7 @@ def edit():
             if user_input == "x":
                 return
             elif user_input == "amount":
-                transaction[user_input] = get_int(">")
+                transaction[user_input] = get_amount()
                 saving()
             elif user_input == "type":
                 transaction[user_input] = get_type()

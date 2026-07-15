@@ -11,10 +11,18 @@ def saving():
         json.dump(data, file, indent=2)
 
 
+def get_int(txt):
+    while True:
+        try:
+            return int(input(txt))
+        except ValueError:
+            print("Error, value invalid. Try again.")
+
+
 def add():
     new_id = data["next_id"]
     transaction_type = input("Type:")
-    amount = int(input("Amount:"))
+    amount = get_int("Amount:")
     description = input("Description:")
     calendar_and_clock = datetime.now().strftime("%Y/%m/%d %H:%M")
 
@@ -82,7 +90,7 @@ def edit():
             if user_input == "x":
                 return
             elif user_input == "amount":
-                transaction[user_input] = int(input(">"))
+                transaction[user_input] = get_int(">")
                 saving()
             elif user_input in transaction:
                 transaction[user_input] = input(">")
@@ -98,14 +106,14 @@ except FileNotFoundError:
 
 while True:
     print("Hi user! \n1. Add transaction \n2. Show data\n3. Show balance\n4. Exit")
-    user_input = int(input(">"))
+    user_input = get_int(">")
     if user_input == 1:
         add()
     elif user_input == 2:
         show_transactions(data)
         while True:
             print("1. Edit \n2. Delete \n3. Return")
-            user_input = int(input(">"))
+            user_input = get_int(">")
             if user_input == 1:
                 edit()
                 pass

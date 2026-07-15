@@ -19,9 +19,22 @@ def get_int(txt):
             print("Error, value invalid. Try again.")
 
 
+def get_type():
+    user_input = input("Select type INCOME or EXPENSE.\n[I/E]:")
+    while True:
+        if user_input.lower() == "i":
+            return "income"
+        elif user_input.lower() == "e":
+            return "expense"
+        else:
+            user_input = input(
+                "Invalid input. Enter I for INCOME or E for EXPENSE\n[I/E]:"
+            )
+
+
 def add():
     new_id = data["next_id"]
-    transaction_type = input("Type:")
+    transaction_type = get_type()
     amount = get_int("Amount:")
     description = input("Description:")
     calendar_and_clock = datetime.now().strftime("%Y/%m/%d %H:%M")
@@ -92,6 +105,9 @@ def edit():
             elif user_input == "amount":
                 transaction[user_input] = get_int(">")
                 saving()
+            elif user_input == "type":
+                transaction[user_input] = get_type()
+                saving()
             elif user_input in transaction:
                 transaction[user_input] = input(">")
                 saving()
@@ -116,7 +132,6 @@ while True:
             user_input = get_int(">")
             if user_input == 1:
                 edit()
-                pass
             elif user_input == 2:
                 delete_transaction()
             elif user_input == 3:

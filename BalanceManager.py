@@ -121,22 +121,33 @@ def delete_transaction():
 
 
 def edit():
-    transaction_ID = input("Which transaction would you like to edit?\nID:")
-    transaction = data["transactions"].get(transaction_ID)
-    if transaction is None:
-        pass
-    else:
-        print("=" * 21)
-        print(
-            f"ID: {transaction_ID} \nType: {transaction['type']} \nAmount: {transaction['amount']} \nDescription: {transaction['description']} \nDate: {transaction['date']}"
+    while True:
+        transaction_ID = input(
+            "Which transaction would you like to edit?\nPress X to return.\n>"
         )
-        print("=" * 21)
-        print("What would you like to edit?\nPress X to return.")
-        while True:
-            user_input = input(">").lower()
-            if user_input == "x":
+        if transaction_ID.strip().lower() == "x":
+            return
+        transaction = data["transactions"].get(transaction_ID)
+        if transaction is None:
+            user_input = input(
+                "Transaction not found. Press ENTER to try again or X to return."
+            )
+            if user_input.strip().lower() == "x":
                 return
-            elif user_input == "amount":
+        else:
+            break
+    print("=" * 21)
+    print(
+        f"ID: {transaction_ID} \nType: {transaction['type']} \nAmount: {transaction['amount']} \nDescription: {transaction['description']} \nDate: {transaction['date']}"
+    )
+    print("=" * 21)
+    print("What would you like to edit?\n Press X to return.")
+    while True:
+        user_input = input(">").lower()
+        if user_input.strip().lower() == "x":
+            return
+        elif user_input in transaction:
+            if user_input == "amount":
                 transaction[user_input] = get_amount()
                 saving()
             elif user_input == "type":
@@ -145,6 +156,8 @@ def edit():
             elif user_input in transaction:
                 transaction[user_input] = input(">")
                 saving()
+        else:
+            print("Invalid field. Try type, amount, description, date or X.")
 
 
 try:

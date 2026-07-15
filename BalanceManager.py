@@ -87,12 +87,19 @@ def delete_transaction():
     if transaction is None:
         print("Transaction not found. Try again.")
     else:
-        user_input = input("Do you really want to delete this transaction?\n[Y/N]:")
-        if user_input.lower() == "y":
+        while True:
+            user_input = (
+                input("Do you really want to delete this transaction?\n[Y/N]:")
+                .strip()
+                .lower()
+            )
+            if user_input == "y" or user_input == "n":
+                break
+            else:
+                print("Invalid input. Please insert Y for YES and N for NO.")
+        if user_input == "y":
             del data["transactions"][transaction_ID]
             saving()
-        else:
-            pass
 
 
 def edit():

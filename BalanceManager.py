@@ -69,6 +69,20 @@ def show_transactions(data):
         print("=" * 21)
 
 
+def sub_menu():
+    show_transactions(data)
+    menu = {1: edit, 2: delete_transaction}
+    while True:
+        user_input = get_int("1. Edit \n2. Delete \n3. Return\n>")
+        action = menu.get(user_input)
+        if action is not None:
+            action()
+        elif user_input == 3:
+            break
+        else:
+            print("Invalid input. Try again.")
+
+
 def calculate_balance(data):
     balance = 0
     for item in data["transactions"].values():
@@ -77,6 +91,10 @@ def calculate_balance(data):
         else:
             balance -= item["amount"]
     return balance
+
+
+def show_balance():
+    print(calculate_balance(data))
 
 
 def delete_transaction():
@@ -136,23 +154,16 @@ except FileNotFoundError:
     data = {"next_id": 1, "transactions": {}}
 
 
+menu = {1: add, 2: sub_menu, 3: show_balance}
 while True:
-    print("Hi user! \n1. Add transaction \n2. Show data\n3. Show balance\n4. Exit")
-    user_input = get_int(">")
-    if user_input == 1:
-        add()
-    elif user_input == 2:
-        show_transactions(data)
-        while True:
-            print("1. Edit \n2. Delete \n3. Return")
-            user_input = get_int(">")
-            if user_input == 1:
-                edit()
-            elif user_input == 2:
-                delete_transaction()
-            elif user_input == 3:
-                break
-    elif user_input == 3:
-        print(calculate_balance(data))
+    print("Hi user!")
+    user_input = get_int(
+        "1. Add transaction \n2. Show data\n3. Show balance\n4. Exit\n>"
+    )
+    action = menu.get(user_input)
+    if action is not None:
+        action()
     elif user_input == 4:
         break
+    else:
+        print("Invalid input. Try again.")

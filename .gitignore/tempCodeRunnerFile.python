@@ -1,0 +1,4 @@
+from datetime import datetime
+
+CalendarAndClock = datetime.now().strftime("%Y/%m/%d %H:%M")
+print(CalendarAndClock)

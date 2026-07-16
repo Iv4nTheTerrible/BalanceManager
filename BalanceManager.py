@@ -63,10 +63,12 @@ def add():
 def show_transactions(data):
     for transaction_id, item in data["transactions"].items():
         print("=" * 21)
-        print(
-            f"ID: {transaction_id} \nType: {item['type']} \nAmount: {item['amount']} \nDescription: {item['description']} \nDate: {item['date']}"
-        )
+        print(format_transaction(transaction_id, item))
         print("=" * 21)
+
+
+def format_transaction(txt1, txt2):
+    return f"ID: {txt1} \nType: {txt2['type']} \nAmount: {txt2['amount']} \nDescription: {txt2['description']} \nDate: {txt2['date']}"
 
 
 def sub_menu():
@@ -98,10 +100,10 @@ def show_balance():
 
 
 def delete_transaction():
-    transaction_ID = input(
+    transaction_id = input(
         "Which transaction would you like to delete?\nTransaction ID:"
     )
-    transaction = data["transactions"].get(transaction_ID)
+    transaction = data["transactions"].get(transaction_id)
     if transaction is None:
         print("Transaction not found. Try again.")
     else:
@@ -116,18 +118,20 @@ def delete_transaction():
             else:
                 print("Invalid input. Please insert Y for YES and N for NO.")
         if user_input == "y":
-            del data["transactions"][transaction_ID]
+            del data["transactions"][transaction_id]
             saving()
 
 
 def edit():
+    # Initial menu interaction
     while True:
-        transaction_ID = input(
+        transaction_id = input(
             "Which transaction would you like to edit?\nPress X to return.\n>"
         )
-        if transaction_ID.strip().lower() == "x":
+        # transaction_id validation
+        if transaction_id.strip().lower() == "x":
             return
-        transaction = data["transactions"].get(transaction_ID)
+        transaction = data["transactions"].get(transaction_id)
         if transaction is None:
             user_input = input(
                 "Transaction not found. Press ENTER to try again or X to return."
@@ -136,12 +140,12 @@ def edit():
                 return
         else:
             break
+    # Showing selected transaction
     print("=" * 21)
-    print(
-        f"ID: {transaction_ID} \nType: {transaction['type']} \nAmount: {transaction['amount']} \nDescription: {transaction['description']} \nDate: {transaction['date']}"
-    )
+    print(format_transaction(transaction_id, transaction))
     print("=" * 21)
     print("What would you like to edit?\n Press X to return.")
+    # Input validation
     while True:
         user_input = input(">").lower()
         if user_input.strip().lower() == "x":

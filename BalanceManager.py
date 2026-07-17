@@ -124,28 +124,39 @@ def delete_transaction():
 
 def edit():
     # Initial menu interaction
-    while True:
-        transaction_id = input(
-            "Which transaction would you like to edit?\nPress X to return.\n>"
-        )
-        # transaction_id validation
-        if transaction_id.strip().lower() == "x":
-            return
-        transaction = data["transactions"].get(transaction_id)
-        if transaction is None:
-            user_input = input(
-                "Transaction not found. Press ENTER to try again or X to return."
-            )
-            if user_input.strip().lower() == "x":
-                return
-        else:
-            break
+    selected = selecting_transaction()
+    if selected is None:
+        return
+    transaction_id, transaction = selected
     # Showing selected transaction
     print("=" * 21)
     print(format_transaction(transaction_id, transaction))
     print("=" * 21)
     print("What would you like to edit?\n Press X to return.")
     # Input validation
+    editing_fields(transaction)
+
+
+def selecting_transaction():
+    while True:
+        transaction_id = input(
+            "Which transaction would you like to edit?\nPress X to return.\n>"
+        )
+        # transaction_id validation
+        if transaction_id.strip().lower() == "x":
+            return None
+        transaction = data["transactions"].get(transaction_id)
+        if transaction is None:
+            user_input = input(
+                "Transaction not found. Press ENTER to try again or X to return."
+            )
+            if user_input.strip().lower() == "x":
+                return None
+        else:
+            return transaction_id, transaction
+
+
+def editing_fields(transaction):
     while True:
         user_input = input(">").lower()
         if user_input.strip().lower() == "x":

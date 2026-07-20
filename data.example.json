@@ -1,0 +1,9 @@
+{
+  "next_id": 2,
+  "transactions": {"1": {
+      "type": "income",
+      "amount": 10000,
+      "description": "example",
+      "date": "XXXX/XX/XX XX:XX"
+    }}
+}

@@ -1,11 +1,13 @@
 import json
 
-
 from datetime import datetime
 
-
-def get_current_datetime():
-    return datetime.now().strftime("%Y/%m/%d %H:%M")
+# Data storage
+try:
+    with open("data.json", "r") as file:
+        data = json.load(file)
+except FileNotFoundError:
+    data = {"next_id": 1, "transactions": {}}
 
 
 def saving():
@@ -13,6 +15,47 @@ def saving():
         json.dump(data, file, indent=2)
 
 
+# General helpers
+def get_current_datetime():
+    return datetime.now().strftime("%Y/%m/%d %H:%M")
+
+
+# Core transaction operations
+def create_transaction(transaction_type, amount, description):
+    new_id = data["next_id"]
+    transaction_date = get_current_datetime()
+
+    data["transactions"][str(new_id)] = {
+        "type": transaction_type,
+        "amount": amount,
+        "description": description,
+        "date": transaction_date,
+    }
+
+    data["next_id"] += 1
+    saving()
+
+
+def remove_transaction(transaction_id):
+    if transaction_id not in data["transactions"]:
+        return False
+
+    del data["transactions"][transaction_id]
+    saving()
+    return True
+
+
+def calculate_balance(data):
+    balance = 0
+    for item in data["transactions"].values():
+        if item["type"].lower() == "income":
+            balance += item["amount"]
+        else:
+            balance -= item["amount"]
+    return balance
+
+
+# CLI input helpers
 def get_int(txt):
     while True:
         try:
@@ -41,27 +84,9 @@ def get_type():
             print("Invalid input. Enter I for INCOME or E for EXPENSE.")
 
 
-def create_transaction(transaction_type, amount, description):
-    new_id = data["next_id"]
-    transaction_date = get_current_datetime()
-
-    data["transactions"][str(new_id)] = {
-        "type": transaction_type,
-        "amount": amount,
-        "description": description,
-        "date": transaction_date,
-    }
-
-    data["next_id"] += 1
-    saving()
-
-
-def add():
-    transaction_type = get_type()
-    amount = get_amount()
-    description = input("Description:")
-
-    create_transaction(transaction_type, amount, description)
+# CLI display helpers
+def format_transaction(txt1, txt2):
+    return f"ID: {txt1} \nType: {txt2['type']} \nAmount: {txt2['amount']} \nDescription: {txt2['description']} \nDate: {txt2['date']}"
 
 
 def show_transactions(data):
@@ -71,84 +96,17 @@ def show_transactions(data):
         print("=" * 21)
 
 
-def format_transaction(txt1, txt2):
-    return f"ID: {txt1} \nType: {txt2['type']} \nAmount: {txt2['amount']} \nDescription: {txt2['description']} \nDate: {txt2['date']}"
-
-
-def sub_menu():
-    show_transactions(data)
-    menu = {1: edit, 2: delete_transaction}
-    while True:
-        user_input = get_int("1. Edit \n2. Delete \n3. Return\n>")
-        action = menu.get(user_input)
-        if action is not None:
-            action()
-        elif user_input == 3:
-            break
-        else:
-            print("Invalid input. Try again.")
-
-
-def calculate_balance(data):
-    balance = 0
-    for item in data["transactions"].values():
-        if item["type"].lower() == "income":
-            balance += item["amount"]
-        else:
-            balance -= item["amount"]
-    return balance
-
-
 def show_balance():
     print(calculate_balance(data))
 
 
-def delete_transaction():
-    transaction_id = input(
-        "Which transaction would you like to delete?\nPress X to return\nTransaction ID:"
-    ).strip()
-    while True:
-        if transaction_id.lower() == "x":
-            return
-        transaction = data["transactions"].get(transaction_id)
-        if transaction is None:
-            transaction_id = input("Transaction not found. Try again.\nTransaction ID:")
-            continue
-        break
-    while True:
-        user_input = (
-            input("Do you really want to delete this transaction?\n[Y/N]:")
-            .strip()
-            .lower()
-        )
-        if user_input == "y":
-            remove_transaction(transaction_id)
-            break
-        elif user_input == "n":
-            break
-        else:
-            print("Invalid input. Please insert Y for YES and N for NO.")
+# CLI transaction workflows
+def add():
+    transaction_type = get_type()
+    amount = get_amount()
+    description = input("Description:")
 
-
-def remove_transaction(transaction_id):
-    if transaction_id not in data["transactions"]:
-        return False
-
-    del data["transactions"][transaction_id]
-    saving()
-    return True
-
-
-def edit():
-    selected = selecting_transaction()
-    if selected is None:
-        return
-    transaction_id, transaction = selected
-    print("=" * 21)
-    print(format_transaction(transaction_id, transaction))
-    print("=" * 21)
-    print("What would you like to edit?\nPress X to return.")
-    editing_fields(transaction)
+    create_transaction(transaction_type, amount, description)
 
 
 def selecting_transaction():
@@ -156,7 +114,6 @@ def selecting_transaction():
         transaction_id = input(
             "Which transaction would you like to edit?\nPress X to return.\n>"
         )
-        # transaction_id validation
         if transaction_id.strip().lower() == "x":
             return None
         transaction = data["transactions"].get(transaction_id)
@@ -190,11 +147,58 @@ def editing_fields(transaction):
         )
 
 
-try:
-    with open("data.json", "r") as file:
-        data = json.load(file)
-except FileNotFoundError:
-    data = {"next_id": 1, "transactions": {}}
+def edit():
+    selected = selecting_transaction()
+    if selected is None:
+        return
+    transaction_id, transaction = selected
+    print("=" * 21)
+    print(format_transaction(transaction_id, transaction))
+    print("=" * 21)
+    print("What would you like to edit?\nPress X to return.")
+    editing_fields(transaction)
+
+
+def delete_transaction():
+    transaction_id = input(
+        "Which transaction would you like to delete?\nPress X to return\nTransaction ID:"
+    ).strip()
+    while True:
+        if transaction_id.lower() == "x":
+            return
+        transaction = data["transactions"].get(transaction_id)
+        if transaction is None:
+            transaction_id = input("Transaction not found. Try again.\nTransaction ID:")
+            continue
+        break
+    while True:
+        user_input = (
+            input("Do you really want to delete this transaction?\n[Y/N]:")
+            .strip()
+            .lower()
+        )
+        if user_input == "y":
+            remove_transaction(transaction_id)
+            break
+        elif user_input == "n":
+            break
+        else:
+            print("Invalid input. Please insert Y for YES and N for NO.")
+
+
+# Menus and application entry point
+def sub_menu():
+    show_transactions(data)
+    menu = {1: edit, 2: delete_transaction}
+    while True:
+        user_input = get_int("1. Edit \n2. Delete \n3. Return\n>")
+        action = menu.get(user_input)
+        if action is not None:
+            action()
+        elif user_input == 3:
+            break
+        else:
+            print("Invalid input. Try again.")
 
 
 def main():

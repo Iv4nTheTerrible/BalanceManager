@@ -29,16 +29,14 @@ def get_amount():
 
 
 def get_type():
-    user_input = input("Select type INCOME or EXPENSE.\n[I/E]:")
     while True:
+        user_input = input("Select type INCOME or EXPENSE.\n[I/E]:")
         if user_input.lower() == "i":
             return "income"
         elif user_input.lower() == "e":
             return "expense"
         else:
-            user_input = input(
-                "Invalid input. Enter I for INCOME or E for EXPENSE\n[I/E]:"
-            )
+            print("Invalid input. Enter I for INCOME or E for EXPENSE.")
 
 
 def add():
@@ -101,25 +99,30 @@ def show_balance():
 
 def delete_transaction():
     transaction_id = input(
-        "Which transaction would you like to delete?\nTransaction ID:"
-    )
-    transaction = data["transactions"].get(transaction_id)
-    if transaction is None:
-        print("Transaction not found. Try again.")
-    else:
-        while True:
-            user_input = (
-                input("Do you really want to delete this transaction?\n[Y/N]:")
-                .strip()
-                .lower()
-            )
-            if user_input == "y" or user_input == "n":
-                break
-            else:
-                print("Invalid input. Please insert Y for YES and N for NO.")
+        "Which transaction would you like to delete?\nPress X to return\nTransaction ID:"
+    ).strip()
+    while True:
+        if transaction_id.lower() == "x":
+            return
+        transaction = data["transactions"].get(transaction_id)
+        if transaction is None:
+            transaction_id = input("Transaction not found. Try again.\nTransaction ID:")
+            continue
+        break
+    while True:
+        user_input = (
+            input("Do you really want to delete this transaction?\n[Y/N]:")
+            .strip()
+            .lower()
+        )
         if user_input == "y":
             del data["transactions"][transaction_id]
             saving()
+            break
+        elif user_input == "n":
+            break
+        else:
+            print("Invalid input. Please insert Y for YES and N for NO.")
 
 
 def edit():
@@ -132,7 +135,7 @@ def edit():
     print("=" * 21)
     print(format_transaction(transaction_id, transaction))
     print("=" * 21)
-    print("What would you like to edit?\n Press X to return.")
+    print("What would you like to edit?\nPress X to return.")
     # Input validation
     editing_fields(transaction)
 
@@ -161,18 +164,19 @@ def editing_fields(transaction):
         user_input = input(">").lower()
         if user_input.strip().lower() == "x":
             return
+        elif user_input == "amount":
+            transaction[user_input] = get_amount()
+        elif user_input == "type":
+            transaction[user_input] = get_type()
         elif user_input in transaction:
-            if user_input == "amount":
-                transaction[user_input] = get_amount()
-                saving()
-            elif user_input == "type":
-                transaction[user_input] = get_type()
-                saving()
-            elif user_input in transaction:
-                transaction[user_input] = input(">")
-                saving()
+            transaction[user_input] = input(">")
         else:
             print("Invalid field. Try type, amount, description, date or X.")
+            continue
+        saving()
+        print(
+            "Transaction updated. What else would you like to edit?\nPress X to return."
+        )
 
 
 try:
@@ -182,16 +186,21 @@ except FileNotFoundError:
     data = {"next_id": 1, "transactions": {}}
 
 
-menu = {1: add, 2: sub_menu, 3: show_balance}
-while True:
+def main():
+    menu = {1: add, 2: sub_menu, 3: show_balance}
     print("Hi user!")
-    user_input = get_int(
-        "1. Add transaction \n2. Show data\n3. Show balance\n4. Exit\n>"
-    )
-    action = menu.get(user_input)
-    if action is not None:
-        action()
-    elif user_input == 4:
-        break
-    else:
-        print("Invalid input. Try again.")
+    while True:
+        user_input = get_int(
+            "1. Add transaction \n2. Show data\n3. Show balance\n4. Exit\n>"
+        )
+        action = menu.get(user_input)
+        if action is not None:
+            action()
+        elif user_input == 4:
+            break
+        else:
+            print("Invalid input. Try again.")
+
+
+if __name__ == "__main__":
+    main()

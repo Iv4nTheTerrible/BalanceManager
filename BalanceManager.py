@@ -3,7 +3,9 @@ import json
 
 from datetime import datetime
 
-calendar_and_clock = datetime.now().strftime("%Y/%m/%d %H:%M")
+
+def get_current_datetime():
+    return datetime.now().strftime("%Y/%m/%d %H:%M")
 
 
 def saving():
@@ -39,23 +41,27 @@ def get_type():
             print("Invalid input. Enter I for INCOME or E for EXPENSE.")
 
 
-def add():
+def create_transaction(transaction_type, amount, description):
     new_id = data["next_id"]
-    transaction_type = get_type()
-    amount = get_amount()
-    description = input("Description:")
-    calendar_and_clock = datetime.now().strftime("%Y/%m/%d %H:%M")
+    transaction_date = get_current_datetime()
 
     data["transactions"][str(new_id)] = {
         "type": transaction_type,
         "amount": amount,
         "description": description,
-        "date": calendar_and_clock,
+        "date": transaction_date,
     }
 
     data["next_id"] += 1
-
     saving()
+
+
+def add():
+    transaction_type = get_type()
+    amount = get_amount()
+    description = input("Description:")
+
+    create_transaction(transaction_type, amount, description)
 
 
 def show_transactions(data):

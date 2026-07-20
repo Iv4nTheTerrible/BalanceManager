@@ -122,8 +122,7 @@ def delete_transaction():
             .lower()
         )
         if user_input == "y":
-            del data["transactions"][transaction_id]
-            saving()
+            remove_transaction(transaction_id)
             break
         elif user_input == "n":
             break
@@ -131,18 +130,24 @@ def delete_transaction():
             print("Invalid input. Please insert Y for YES and N for NO.")
 
 
+def remove_transaction(transaction_id):
+    if transaction_id not in data["transactions"]:
+        return False
+
+    del data["transactions"][transaction_id]
+    saving()
+    return True
+
+
 def edit():
-    # Initial menu interaction
     selected = selecting_transaction()
     if selected is None:
         return
     transaction_id, transaction = selected
-    # Showing selected transaction
     print("=" * 21)
     print(format_transaction(transaction_id, transaction))
     print("=" * 21)
     print("What would you like to edit?\nPress X to return.")
-    # Input validation
     editing_fields(transaction)
 
 

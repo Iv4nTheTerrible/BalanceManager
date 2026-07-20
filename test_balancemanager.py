@@ -152,6 +152,23 @@ class BalanceManagerTests(unittest.TestCase):
         self.assertIn("2", balance_manager.data["transactions"])
         saving.assert_not_called()
 
+    def test_remove_transaction_deletes_existing_transaction(self):
+        with patch.object(balance_manager, "saving") as saving:
+            result = balance_manager.remove_transaction("2")
+
+        self.assertTrue(result)
+        self.assertNotIn("2", balance_manager.data["transactions"])
+        saving.assert_called_once()
+
+    def test_remove_transaction_rejects_missing_transaction(self):
+        with patch.object(balance_manager, "saving") as saving:
+            result = balance_manager.remove_transaction("999")
+
+        self.assertFalse(result)
+        self.assertIn("1", balance_manager.data["transactions"])
+        self.assertIn("2", balance_manager.data["transactions"])
+        saving.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

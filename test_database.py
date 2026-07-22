@@ -6,12 +6,13 @@ from database import create_transaction_table
 
 
 class DatabaseTests(unittest.TestCase):
+    def setUp(self):
+        self.connection = sqlite3.connect(":memory:")
+        create_transaction_table(self.connection)
+
     def test_create_transaction_table(self):
-        connection = sqlite3.connect(":memory:")
 
-        create_transaction_table(connection)
-
-        table = connection.execute("""
+        table = self.connection.execute("""
             SELECT name
             FROM sqlite_master
             WHERE type = 'table'
@@ -20,7 +21,8 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertIsNotNone(table)
 
-        connection.close()
+    def tearDown(self):
+        self.connection.close()
 
 
 if __name__ == "__main__":

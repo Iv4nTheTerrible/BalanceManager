@@ -120,16 +120,45 @@ class BalanceManagerTests(unittest.TestCase):
         with patch("builtins.input", return_value="x"):
             self.assertIsNone(balance_manager.selecting_transaction())
 
-    def test_editing_description_changes_transaction_and_saves(self):
+    def test_updating_description_changes_transaction_and_saves(self):
         transaction = balance_manager.data["transactions"]["1"]
-        with (
-            patch("builtins.input", side_effect=["description", "New salary", "x"]),
-            patch.object(balance_manager, "saving") as saving,
-        ):
-            balance_manager.editing_fields(transaction)
+        with patch.object(balance_manager, "saving") as saving:
+            result = balance_manager.update_field(
+                transaction, "description", "New salary"
+            )
 
+        self.assertTrue(result)
         self.assertEqual(transaction["description"], "New salary")
         saving.assert_called_once()
+
+    def test_updating_rejects_invalid_field(self):
+        transaction = balance_manager.data["transactions"]["1"]
+        with patch.object(balance_manager, "saving") as saving:
+            result = balance_manager.update_field(
+                transaction, "category", "New category"
+            )
+
+        self.assertFalse(result)
+        self.assertNotIn("category", transaction)
+        saving.assert_not_called()
+
+    def test_selecting_field_passes_description_to_update_field(self):
+        transaction = balance_manager.data["transactions"]["1"]
+
+        with (
+            patch(
+                "builtins.input",
+                side_effect=["description", "New salary", "x"],
+            ),
+            patch.object(balance_manager, "update_field") as update_field,
+        ):
+            balance_manager.selecting_field(transaction)
+
+        update_field.assert_called_once_with(
+            transaction,
+            "description",
+            "New salary",
+        )
 
     def test_format_transaction_contains_important_fields(self):
         result = balance_manager.format_transaction(

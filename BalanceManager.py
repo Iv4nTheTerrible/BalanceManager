@@ -127,24 +127,33 @@ def selecting_transaction():
             return transaction_id, transaction
 
 
-def editing_fields(transaction):
+def selecting_field(transaction):
     while True:
-        user_input = input(">").lower()
-        if user_input.strip().lower() == "x":
+        field = input(">").strip().lower()
+        if field == "x":
             return
-        elif user_input == "amount":
-            transaction[user_input] = get_amount()
-        elif user_input == "type":
-            transaction[user_input] = get_type()
-        elif user_input in transaction:
-            transaction[user_input] = input(">")
-        else:
+        elif field not in transaction:
             print("Invalid field. Try type, amount, description, date or X.")
             continue
-        saving()
+        if field == "amount":
+            new_value = get_amount()
+        elif field == "type":
+            new_value = get_type()
+        else:
+            new_value = input(">")
+        update_field(transaction, field, new_value)
         print(
             "Transaction updated. What else would you like to edit?\nPress X to return."
         )
+
+
+def update_field(transaction, field, updated_value):
+    if field not in transaction:
+        return False
+
+    transaction[field] = updated_value
+    saving()
+    return True
 
 
 def edit():
@@ -156,7 +165,7 @@ def edit():
     print(format_transaction(transaction_id, transaction))
     print("=" * 21)
     print("What would you like to edit?\nPress X to return.")
-    editing_fields(transaction)
+    selecting_field(transaction)
 
 
 def delete_transaction():

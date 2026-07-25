@@ -11,3 +11,32 @@ def create_transaction_table(connection):
             date TEXT NOT NULL
         )
         """)
+
+
+def insert_transaction(
+    connection,
+    transaction_type,
+    amount,
+    description,
+    date,
+):
+    cursor = connection.execute(
+        """
+        INSERT INTO transactions (
+            type,
+            amount,
+            description,
+            date
+        )
+        VALUES (?,?,?,?)
+        """,
+        (
+            transaction_type,
+            amount,
+            description,
+            date,
+        ),
+    )
+
+    connection.commit()
+    return cursor.lastrowid

@@ -2,7 +2,12 @@ import sqlite3
 import unittest
 
 
-from database import create_transaction_table, insert_transaction, get_transactions
+from database import (
+    create_transaction_table,
+    insert_transaction,
+    get_transactions,
+    update_transaction_field,
+)
 
 
 class DatabaseTests(unittest.TestCase):
@@ -91,6 +96,72 @@ class DatabaseTests(unittest.TestCase):
                 "2026/07/25 10:00",
             ),
         )
+
+    def test_update_transaction_field(self):
+        transaction_id = insert_transaction(
+            self.connection,
+            "expense",
+            800,
+            "Lunch",
+            "2026/07/28 12:00",
+        )
+
+        result = update_transaction_field(
+            self.connection,
+            transaction_id,
+            "description",
+            "Dinner",
+        )
+
+        transaction = self.connection.execute(
+            """
+            SELECT description
+            FROM transactions
+            WHERE id = ?
+            """,
+            (transaction_id,),
+        ).fetchone()
+
+        self.assertTrue(result)
+        self.assertEqual(transaction, ("Dinner",))
+
+    def test_update_transaction_field_non_valid_id(self):
+        result = update_transaction_field(
+            self.connection,
+            999,
+            "description",
+            "Dinner",
+        )
+
+        self.assertFalse(result)
+
+    def test_update_transaction_field_non_valid_field(self):
+        transaction_id = insert_transaction(
+            self.connection,
+            "expense",
+            800,
+            "Lunch",
+            "2026/07/28 12:00",
+        )
+
+        result = update_transaction_field(
+            self.connection,
+            transaction_id,
+            "category",
+            "Dinner",
+        )
+
+        transaction = self.connection.execute(
+            """
+            SELECT description
+            FROM transactions
+            WHERE id = ?
+            """,
+            (transaction_id,),
+        ).fetchone()
+
+        self.assertFalse(result)
+        self.assertEqual(transaction, ("Lunch",))
 
     def tearDown(self):
         self.connection.close()

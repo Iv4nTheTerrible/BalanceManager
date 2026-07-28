@@ -50,3 +50,35 @@ def get_transactions(connection):
             transactions
         ORDER BY
             id DESC""").fetchall()
+
+
+def update_transaction_field(
+    connection,
+    transaction_id,
+    field,
+    new_value,
+):
+    allowed_fields = {
+        "type",
+        "amount",
+        "description",
+        "date",
+    }
+
+    if field not in allowed_fields:
+        return False
+
+    cursor = connection.execute(
+        f"""
+        UPDATE transactions
+        SET {field} = ?
+        WHERE id = ?
+        """,
+        (
+            new_value,
+            transaction_id,
+        ),
+    )
+
+    connection.commit()
+    return cursor.rowcount > 0

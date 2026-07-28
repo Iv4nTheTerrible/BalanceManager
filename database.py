@@ -40,3 +40,13 @@ def insert_transaction(
 
     connection.commit()
     return cursor.lastrowid
+
+
+def get_transactions(connection):
+    return connection.execute("""
+        SELECT
+            id, type, amount, description, date
+        FROM
+            transactions
+        ORDER BY
+            id DESC""").fetchall()

@@ -2,7 +2,7 @@ import sqlite3
 import unittest
 
 
-from database import create_transaction_table, insert_transaction
+from database import create_transaction_table, insert_transaction, get_transactions
 
 
 class DatabaseTests(unittest.TestCase):
@@ -48,6 +48,47 @@ class DatabaseTests(unittest.TestCase):
                 800,
                 "Lunch",
                 "2026/07/23 12:00",
+            ),
+        )
+
+    def test_get_transactions_returns_newest_first(self):
+        insert_transaction(
+            self.connection,
+            "income",
+            1000,
+            "Salary",
+            "2026/07/25 10:00",
+        )
+
+        insert_transaction(
+            self.connection,
+            "expense",
+            800,
+            "Lunch",
+            "2026/07/25 12:00",
+        )
+
+        transactions = get_transactions(self.connection)
+
+        self.assertEqual(len(transactions), 2)
+        self.assertEqual(
+            transactions[0],
+            (
+                2,
+                "expense",
+                800,
+                "Lunch",
+                "2026/07/25 12:00",
+            ),
+        )
+        self.assertEqual(
+            transactions[1],
+            (
+                1,
+                "income",
+                1000,
+                "Salary",
+                "2026/07/25 10:00",
             ),
         )
 

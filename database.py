@@ -58,6 +58,17 @@ def get_transactions(connection):
             id DESC""").fetchall()
 
 
+def get_transaction_by_id(connection, transaction_id):
+    return connection.execute(
+        """
+        SELECT id, type, amount, description, date
+        FROM transactions
+        WHERE id = ?
+        """,
+        (transaction_id,),
+    ).fetchone()
+
+
 def update_transaction_field(
     connection,
     transaction_id,

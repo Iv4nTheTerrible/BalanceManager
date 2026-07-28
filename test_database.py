@@ -4,6 +4,7 @@ import unittest
 from database import (
     insert_transaction,
     get_transactions,
+    get_transaction_by_id,
     update_transaction_field,
     delete_transaction_by_id,
     connect_database,
@@ -95,6 +96,39 @@ class DatabaseTests(unittest.TestCase):
                 "2026/07/25 10:00",
             ),
         )
+
+    def test_get_transaction_by_id(self):
+        transaction_id = insert_transaction(
+            self.connection,
+            "expense",
+            800,
+            "Lunch",
+            "2026/07/28 12:00",
+        )
+
+        transaction = get_transaction_by_id(
+            self.connection,
+            transaction_id,
+        )
+
+        self.assertEqual(
+            transaction,
+            (
+                transaction_id,
+                "expense",
+                800,
+                "Lunch",
+                "2026/07/28 12:00",
+            ),
+        )
+
+    def test_get_transaction_by_id_non_valid_id(self):
+        transaction = get_transaction_by_id(
+            self.connection,
+            999,
+        )
+
+        self.assertIsNone(transaction)
 
     def test_update_transaction_field(self):
         transaction_id = insert_transaction(

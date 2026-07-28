@@ -1,22 +1,20 @@
-import sqlite3
 import unittest
 
 
 from database import (
-    create_transaction_table,
     insert_transaction,
     get_transactions,
     update_transaction_field,
     delete_transaction_by_id,
+    connect_database,
 )
 
 
 class DatabaseTests(unittest.TestCase):
     def setUp(self):
-        self.connection = sqlite3.connect(":memory:")
-        create_transaction_table(self.connection)
+        self.connection = connect_database(":memory:")
 
-    def test_create_transaction_table(self):
+    def test_connect_database_creates_transaction_table(self):
 
         table = self.connection.execute("""
             SELECT name

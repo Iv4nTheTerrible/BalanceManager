@@ -13,6 +13,12 @@ def create_transaction_table(connection):
         """)
 
 
+def connect_database(database_path="balance_manager.db"):
+    connection = sqlite3.connect(database_path)
+    create_transaction_table(connection)
+    return connection
+
+
 def insert_transaction(
     connection,
     transaction_type,

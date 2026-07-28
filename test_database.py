@@ -7,6 +7,7 @@ from database import (
     insert_transaction,
     get_transactions,
     update_transaction_field,
+    delete_transaction_by_id,
 )
 
 
@@ -162,6 +163,40 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertFalse(result)
         self.assertEqual(transaction, ("Lunch",))
+
+    def test_delete_transaction(self):
+        transaction_id = insert_transaction(
+            self.connection,
+            "expense",
+            800,
+            "Lunch",
+            "2026/07/28 12:00",
+        )
+
+        deleted = delete_transaction_by_id(
+            self.connection,
+            transaction_id,
+        )
+
+        transaction = self.connection.execute(
+            """
+            SELECT id
+            FROM transactions
+            WHERE id = ?
+            """,
+            (transaction_id,),
+        ).fetchone()
+
+        self.assertTrue(deleted)
+        self.assertIsNone(transaction)
+
+    def test_delete_transaction_non_valid_id(self):
+        deleted = delete_transaction_by_id(
+            self.connection,
+            999,
+        )
+
+        self.assertFalse(deleted)
 
     def tearDown(self):
         self.connection.close()

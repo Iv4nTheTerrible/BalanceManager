@@ -82,3 +82,16 @@ def update_transaction_field(
 
     connection.commit()
     return cursor.rowcount > 0
+
+
+def delete_transaction_by_id(connection, transaction_id):
+    cursor = connection.execute(
+        """
+        DELETE FROM transactions
+        WHERE id = ?
+        """,
+        (transaction_id,),
+    )
+
+    connection.commit()
+    return cursor.rowcount > 0

@@ -47,46 +47,28 @@ class BalanceManagerTests(unittest.TestCase):
         with patch("builtins.input", side_effect=["wrong", "e"]):
             self.assertEqual(balance_manager.get_type(), "expense")
 
-    def test_create_transaction_and_increment_next_id(self):
-        with (
-            patch.object(
-                balance_manager,
-                "get_current_datetime",
-                return_value="2026/07/20 15:00",
-            ),
-            patch.object(balance_manager, "saving") as saving,
-        ):
-            balance_manager.create_transaction(
-                "income",
-                500,
-                "Freelance",
-            )
+    def test_add_passes_user_input_to_insert_transaction(self):
+        connection = object()
 
-        self.assertEqual(balance_manager.data["next_id"], 4)
-        self.assertEqual(
-            balance_manager.data["transactions"]["3"],
-            {
-                "type": "income",
-                "amount": 500,
-                "description": "Freelance",
-                "date": "2026/07/20 15:00",
-            },
-        )
-        saving.assert_called_once()
-
-    def test_add_passes_user_input_to_create_transaction(self):
         with (
             patch.object(balance_manager, "get_type", return_value="expense"),
             patch.object(balance_manager, "get_amount", return_value=800),
             patch("builtins.input", return_value="Lunch"),
-            patch.object(balance_manager, "create_transaction") as create_transaction,
+            patch.object(
+                balance_manager,
+                "get_current_datetime",
+                return_value="2026/08/07 12:00",
+            ),
+            patch.object(balance_manager, "insert_transaction") as insert_transaction,
         ):
-            balance_manager.add()
+            balance_manager.add(connection)
 
-        create_transaction.assert_called_once_with(
+        insert_transaction.assert_called_once_with(
+            connection,
             "expense",
             800,
             "Lunch",
+            "2026/08/07 12:00",
         )
 
     def test_delete_transaction_after_confirmation(self):

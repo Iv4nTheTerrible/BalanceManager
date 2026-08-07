@@ -1,5 +1,14 @@
 import json
 
+from database import (
+    insert_transaction,
+    get_transactions,
+    get_transaction_by_id,
+    update_transaction_field,
+    delete_transaction_by_id,
+    connect_database,
+)
+
 from datetime import datetime
 
 # Data storage
@@ -21,21 +30,6 @@ def get_current_datetime():
 
 
 # Core transaction operations
-def create_transaction(transaction_type, amount, description):
-    new_id = data["next_id"]
-    transaction_date = get_current_datetime()
-
-    data["transactions"][str(new_id)] = {
-        "type": transaction_type,
-        "amount": amount,
-        "description": description,
-        "date": transaction_date,
-    }
-
-    data["next_id"] += 1
-    saving()
-
-
 def remove_transaction(transaction_id):
     if transaction_id not in data["transactions"]:
         return False
@@ -101,12 +95,18 @@ def show_balance():
 
 
 # CLI transaction workflows
-def add():
+def add(connection):
     transaction_type = get_type()
     amount = get_amount()
     description = input("Description:")
 
-    create_transaction(transaction_type, amount, description)
+    insert_transaction(
+        connection,
+        transaction_type,
+        amount,
+        description,
+        get_current_datetime(),
+    )
 
 
 def selecting_transaction():
@@ -211,19 +211,28 @@ def sub_menu():
 
 
 def main():
-    menu = {1: add, 2: sub_menu, 3: show_balance}
-    print("Hi user!")
-    while True:
-        user_input = get_int(
-            "1. Add transaction \n2. Show data\n3. Show balance\n4. Exit\n>"
-        )
-        action = menu.get(user_input)
-        if action is not None:
-            action()
-        elif user_input == 4:
-            break
-        else:
-            print("Invalid input. Try again.")
+    connection = connect_database()
+
+    try:
+        menu = {
+            1: lambda: add(connection),
+            2: sub_menu,
+            3: show_balance,
+        }
+        print("Hi user!")
+        while True:
+            user_input = get_int(
+                "1. Add transaction \n2. Show data\n3. Show balance\n4. Exit\n>"
+            )
+            action = menu.get(user_input)
+            if action is not None:
+                action()
+            elif user_input == 4:
+                break
+            else:
+                print("Invalid input. Try again.")
+    finally:
+        connection.close()
 
 
 if __name__ == "__main__":

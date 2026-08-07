@@ -79,14 +79,17 @@ def get_type():
 
 
 # CLI display helpers
-def format_transaction(txt1, txt2):
-    return f"ID: {txt1} \nType: {txt2['type']} \nAmount: {txt2['amount']} \nDescription: {txt2['description']} \nDate: {txt2['date']}"
+def format_transaction(transaction):
+    transaction_id, transaction_type, amount, description, date = transaction
+
+    return f"ID: {transaction_id} \nType: {transaction_type} \nAmount: {amount} \nDescription: {description} \nDate: {date}"
 
 
-def show_transactions(data):
-    for transaction_id, item in data["transactions"].items():
+def show_transactions(connection):
+    transactions = get_transactions(connection)
+    for transaction in transactions:
         print("=" * 21)
-        print(format_transaction(transaction_id, item))
+        print(format_transaction(transaction))
         print("=" * 21)
 
 
@@ -109,14 +112,19 @@ def add(connection):
     )
 
 
-def selecting_transaction():
+def selecting_transaction(connection):
     while True:
         transaction_id = input(
             "Which transaction would you like to edit?\nPress X to return.\n>"
         )
         if transaction_id.strip().lower() == "x":
             return None
-        transaction = data["transactions"].get(transaction_id)
+        try:
+            transaction_id = int(transaction_id)
+        except ValueError:
+            print("Invalid ID. Please enter a number.")
+            continue
+        transaction = get_transaction_by_id(connection, transaction_id)
         if transaction is None:
             user_input = input(
                 "Transaction not found. Press ENTER to try again or X to return."
@@ -127,12 +135,18 @@ def selecting_transaction():
             return transaction_id, transaction
 
 
-def selecting_field(transaction):
+def selecting_field(connection, transaction_id):
+    allowed_fields = {
+        "type",
+        "amount",
+        "description",
+        "date",
+    }
     while True:
         field = input(">").strip().lower()
         if field == "x":
             return
-        elif field not in transaction:
+        elif field not in allowed_fields:
             print("Invalid field. Try type, amount, description, date or X.")
             continue
         if field == "amount":
@@ -141,31 +155,24 @@ def selecting_field(transaction):
             new_value = get_type()
         else:
             new_value = input(">")
-        update_field(transaction, field, new_value)
+        update_transaction_field(connection, transaction_id, field, new_value)
         print(
             "Transaction updated. What else would you like to edit?\nPress X to return."
         )
 
 
-def update_field(transaction, field, updated_value):
-    if field not in transaction:
-        return False
-
-    transaction[field] = updated_value
-    saving()
-    return True
-
-
-def edit():
-    selected = selecting_transaction()
+def edit(connection):
+    selected = selecting_transaction(connection)
     if selected is None:
         return
+
     transaction_id, transaction = selected
+
     print("=" * 21)
-    print(format_transaction(transaction_id, transaction))
+    print(format_transaction(transaction))
     print("=" * 21)
     print("What would you like to edit?\nPress X to return.")
-    selecting_field(transaction)
+    selecting_field(connection, transaction_id)
 
 
 def delete_transaction():
@@ -196,9 +203,12 @@ def delete_transaction():
 
 
 # Menus and application entry point
-def sub_menu():
-    show_transactions(data)
-    menu = {1: edit, 2: delete_transaction}
+def sub_menu(connection):
+    show_transactions(connection)
+    menu = {
+        1: lambda: edit(connection),
+        2: delete_transaction,
+    }
     while True:
         user_input = get_int("1. Edit \n2. Delete \n3. Return\n>")
         action = menu.get(user_input)
@@ -216,7 +226,7 @@ def main():
     try:
         menu = {
             1: lambda: add(connection),
-            2: sub_menu,
+            2: lambda: sub_menu(connection),
             3: show_balance,
         }
         print("Hi user!")

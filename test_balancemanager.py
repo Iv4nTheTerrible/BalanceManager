@@ -92,65 +92,108 @@ class BalanceManagerTests(unittest.TestCase):
         saving.assert_not_called()
 
     def test_selecting_transaction_returns_selected_item(self):
-        with patch("builtins.input", return_value="1"):
-            transaction_id, transaction = balance_manager.selecting_transaction()
+        connection = object()
+        transaction = (
+            1,
+            "income",
+            1000,
+            "Salary",
+            "2026/07/17 10:00",
+        )
 
-        self.assertEqual(transaction_id, "1")
-        self.assertIs(transaction, balance_manager.data["transactions"]["1"])
+        with (
+            patch("builtins.input", return_value="1"),
+            patch.object(
+                balance_manager,
+                "get_transaction_by_id",
+                return_value=transaction,
+            ) as get_transaction_by_id,
+        ):
+            result = balance_manager.selecting_transaction(connection)
+
+        self.assertEqual(result, (1, transaction))
+        get_transaction_by_id.assert_called_once_with(connection, 1)
 
     def test_selecting_transaction_can_exit(self):
-        with patch("builtins.input", return_value="x"):
-            self.assertIsNone(balance_manager.selecting_transaction())
+        connection = object()
 
-    def test_updating_description_changes_transaction_and_saves(self):
-        transaction = balance_manager.data["transactions"]["1"]
-        with patch.object(balance_manager, "saving") as saving:
-            result = balance_manager.update_field(
-                transaction, "description", "New salary"
-            )
+        with (
+            patch("builtins.input", return_value="x"),
+            patch.object(
+                balance_manager,
+                "get_transaction_by_id",
+            ) as get_transaction_by_id,
+        ):
+            result = balance_manager.selecting_transaction(connection)
 
-        self.assertTrue(result)
-        self.assertEqual(transaction["description"], "New salary")
-        saving.assert_called_once()
+        self.assertIsNone(result)
+        get_transaction_by_id.assert_not_called()
 
-    def test_updating_rejects_invalid_field(self):
-        transaction = balance_manager.data["transactions"]["1"]
-        with patch.object(balance_manager, "saving") as saving:
-            result = balance_manager.update_field(
-                transaction, "category", "New category"
-            )
-
-        self.assertFalse(result)
-        self.assertNotIn("category", transaction)
-        saving.assert_not_called()
-
-    def test_selecting_field_passes_description_to_update_field(self):
-        transaction = balance_manager.data["transactions"]["1"]
+    def test_selecting_field_passes_description_to_update_transaction(self):
+        connection = object()
 
         with (
             patch(
                 "builtins.input",
                 side_effect=["description", "New salary", "x"],
             ),
-            patch.object(balance_manager, "update_field") as update_field,
+            patch.object(
+                balance_manager,
+                "update_transaction_field",
+            ) as update_transaction_field,
         ):
-            balance_manager.selecting_field(transaction)
+            balance_manager.selecting_field(connection, 1)
 
-        update_field.assert_called_once_with(
-            transaction,
+        update_transaction_field.assert_called_once_with(
+            connection,
+            1,
             "description",
             "New salary",
         )
 
     def test_format_transaction_contains_important_fields(self):
-        result = balance_manager.format_transaction(
-            "1", balance_manager.data["transactions"]["1"]
+        transaction = (
+            1,
+            "income",
+            1000,
+            "Salary",
+            "2026/07/17 10:00",
         )
+        result = balance_manager.format_transaction(transaction)
 
         self.assertIn("ID: 1", result)
         self.assertIn("Type: income", result)
         self.assertIn("Amount: 1000", result)
         self.assertIn("Description: Salary", result)
+
+    def test_show_transactions_reads_and_displays_database_transactions(self):
+        connection = object()
+        transaction = (
+            1,
+            "expense",
+            800,
+            "Lunch",
+            "2026/08/07 12:00",
+        )
+
+        with (
+            patch.object(
+                balance_manager,
+                "get_transactions",
+                return_value=[transaction],
+            ) as get_transactions,
+            patch.object(
+                balance_manager,
+                "format_transaction",
+                return_value="Formatted transaction",
+            ) as format_transaction,
+            patch("builtins.print") as print_mock,
+        ):
+            balance_manager.show_transactions(connection)
+
+        get_transactions.assert_called_once_with(connection)
+        format_transaction.assert_called_once_with(transaction)
+        print_mock.assert_any_call("Formatted transaction")
 
     def test_delete_transaction_can_exit_after_invalid_id(self):
         with (

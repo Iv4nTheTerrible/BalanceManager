@@ -220,11 +220,46 @@ class BalanceManagerTests(unittest.TestCase):
             ) as format_transaction,
             patch("builtins.print") as print_mock,
         ):
-            balance_manager.show_transactions(connection)
+            result = balance_manager.show_transactions(connection)
 
+        self.assertTrue(result)
         get_transactions.assert_called_once_with(connection)
         format_transaction.assert_called_once_with(transaction)
         print_mock.assert_any_call("Formatted transaction")
+
+    def test_show_transactions_reports_when_database_is_empty(self):
+        connection = object()
+
+        with (
+            patch.object(
+                balance_manager,
+                "get_transactions",
+                return_value=[],
+            ) as get_transactions,
+            patch("builtins.print") as print_mock,
+        ):
+            result = balance_manager.show_transactions(connection)
+
+        self.assertFalse(result)
+        get_transactions.assert_called_once_with(connection)
+        print_mock.assert_called_once_with(
+            "No transactions found, try adding a transaction."
+        )
+
+    def test_sub_menu_displays_transactions_once(self):
+        connection = object()
+
+        with (
+            patch.object(
+                balance_manager,
+                "show_transactions",
+                return_value=True,
+            ) as show_transactions,
+            patch.object(balance_manager, "get_int", return_value=3),
+        ):
+            balance_manager.sub_menu(connection)
+
+        show_transactions.assert_called_once_with(connection)
 
     def test_delete_transaction_can_exit_after_invalid_id(self):
         connection = object()

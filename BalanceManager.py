@@ -65,10 +65,15 @@ def format_transaction(transaction):
 
 def show_transactions(connection):
     transactions = get_transactions(connection)
+    if not transactions:
+        print("No transactions found, try adding a transaction.")
+        return False
+
     for transaction in transactions:
         print("=" * 21)
         print(format_transaction(transaction))
         print("=" * 21)
+    return True
 
 
 def show_balance(connection):
@@ -181,7 +186,9 @@ def delete_transaction(connection):
 
 # Menus and application entry point
 def sub_menu(connection):
-    show_transactions(connection)
+    if not show_transactions(connection):
+        return
+
     menu = {
         1: lambda: edit(connection),
         2: lambda: delete_transaction(connection),

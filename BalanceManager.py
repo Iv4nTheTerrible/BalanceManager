@@ -1,5 +1,3 @@
-import json
-
 from database import (
     insert_transaction,
     get_transactions,
@@ -9,19 +7,8 @@ from database import (
     connect_database,
 )
 
+
 from datetime import datetime
-
-# Data storage
-try:
-    with open("data.json", "r") as file:
-        data = json.load(file)
-except FileNotFoundError:
-    data = {"next_id": 1, "transactions": {}}
-
-
-def saving():
-    with open("data.json", "w") as file:
-        json.dump(data, file, indent=2)
 
 
 # General helpers
@@ -30,13 +17,13 @@ def get_current_datetime():
 
 
 # Core transaction operations
-def calculate_balance(data):
+def calculate_balance(connection):
     balance = 0
-    for item in data["transactions"].values():
-        if item["type"].lower() == "income":
-            balance += item["amount"]
+    for _, transaction_type, amount, _, _ in get_transactions(connection):
+        if transaction_type == "income":
+            balance += amount
         else:
-            balance -= item["amount"]
+            balance -= amount
     return balance
 
 
@@ -84,8 +71,8 @@ def show_transactions(connection):
         print("=" * 21)
 
 
-def show_balance():
-    print(calculate_balance(data))
+def show_balance(connection):
+    print(calculate_balance(connection))
 
 
 # CLI transaction workflows
@@ -217,7 +204,7 @@ def main():
         menu = {
             1: lambda: add(connection),
             2: lambda: sub_menu(connection),
-            3: show_balance,
+            3: lambda: show_balance(connection),
         }
         print("Hi user!")
         while True:

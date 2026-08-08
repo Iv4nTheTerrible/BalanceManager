@@ -5,35 +5,34 @@ import BalanceManager as balance_manager
 
 
 class BalanceManagerTests(unittest.TestCase):
-    def setUp(self):
-        self.original_data = balance_manager.data
-        balance_manager.data = {
-            "next_id": 3,
-            "transactions": {
-                "1": {
-                    "type": "income",
-                    "amount": 1000,
-                    "description": "Salary",
-                    "date": "2026/07/17 10:00",
-                },
-                "2": {
-                    "type": "expense",
-                    "amount": 250,
-                    "description": "Lunch",
-                    "date": "2026/07/17 12:00",
-                },
-            },
-        }
-
-    def tearDown(self):
-        balance_manager.data = self.original_data
-
     def test_calculate_balance(self):
-        self.assertEqual(balance_manager.calculate_balance(balance_manager.data), 750)
+        connection = object()
+        transactions = [
+            (1, "income", 1000, "Salary", "2026/08/09 10:00"),
+            (2, "expense", 250, "Lunch", "2026/08/09 12:00"),
+        ]
+
+        with patch.object(
+            balance_manager,
+            "get_transactions",
+            return_value=transactions,
+        ) as get_transactions:
+            result = balance_manager.calculate_balance(connection)
+
+        self.assertEqual(result, 750)
+        get_transactions.assert_called_once_with(connection)
 
     def test_calculate_balance_with_no_transactions(self):
-        empty_data = {"next_id": 1, "transactions": {}}
-        self.assertEqual(balance_manager.calculate_balance(empty_data), 0)
+        connection = object()
+
+        with patch.object(
+            balance_manager,
+            "get_transactions",
+            return_value=[],
+        ):
+            result = balance_manager.calculate_balance(connection)
+
+        self.assertEqual(result, 0)
 
     def test_get_int_retries_after_invalid_input(self):
         with patch("builtins.input", side_effect=["not a number", "42"]):

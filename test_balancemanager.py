@@ -72,24 +72,56 @@ class BalanceManagerTests(unittest.TestCase):
         )
 
     def test_delete_transaction_after_confirmation(self):
-        with (
-            patch("builtins.input", side_effect=["2", "y"]),
-            patch.object(balance_manager, "saving") as saving,
-        ):
-            balance_manager.delete_transaction()
+        connection = object()
+        transaction = (
+            1,
+            "expense",
+            800,
+            "Lunch",
+            "2026/08/09 12:00",
+        )
 
-        self.assertNotIn("2", balance_manager.data["transactions"])
-        saving.assert_called_once()
+        with (
+            patch.object(
+                balance_manager,
+                "selecting_transaction",
+                return_value=(1, transaction),
+            ),
+            patch("builtins.input", return_value="y"),
+            patch.object(
+                balance_manager,
+                "delete_transaction_by_id",
+            ) as delete_transaction_by_id,
+        ):
+            balance_manager.delete_transaction(connection)
+
+        delete_transaction_by_id.assert_called_once_with(connection, 1)
 
     def test_delete_transaction_can_be_cancelled(self):
-        with (
-            patch("builtins.input", side_effect=["2", "n"]),
-            patch.object(balance_manager, "saving") as saving,
-        ):
-            balance_manager.delete_transaction()
+        connection = object()
+        transaction = (
+            1,
+            "expense",
+            800,
+            "Lunch",
+            "2026/08/09 12:00",
+        )
 
-        self.assertIn("2", balance_manager.data["transactions"])
-        saving.assert_not_called()
+        with (
+            patch.object(
+                balance_manager,
+                "selecting_transaction",
+                return_value=(1, transaction),
+            ),
+            patch("builtins.input", return_value="n"),
+            patch.object(
+                balance_manager,
+                "delete_transaction_by_id",
+            ) as delete_transaction_by_id,
+        ):
+            balance_manager.delete_transaction(connection)
+
+        delete_transaction_by_id.assert_not_called()
 
     def test_selecting_transaction_returns_selected_item(self):
         connection = object()
@@ -109,7 +141,7 @@ class BalanceManagerTests(unittest.TestCase):
                 return_value=transaction,
             ) as get_transaction_by_id,
         ):
-            result = balance_manager.selecting_transaction(connection)
+            result = balance_manager.selecting_transaction(connection, "edit")
 
         self.assertEqual(result, (1, transaction))
         get_transaction_by_id.assert_called_once_with(connection, 1)
@@ -124,7 +156,7 @@ class BalanceManagerTests(unittest.TestCase):
                 "get_transaction_by_id",
             ) as get_transaction_by_id,
         ):
-            result = balance_manager.selecting_transaction(connection)
+            result = balance_manager.selecting_transaction(connection, "edit")
 
         self.assertIsNone(result)
         get_transaction_by_id.assert_not_called()
@@ -196,32 +228,22 @@ class BalanceManagerTests(unittest.TestCase):
         print_mock.assert_any_call("Formatted transaction")
 
     def test_delete_transaction_can_exit_after_invalid_id(self):
+        connection = object()
+
         with (
-            patch("builtins.input", side_effect=["999", "x"]),
-            patch.object(balance_manager, "saving") as saving,
+            patch.object(
+                balance_manager,
+                "selecting_transaction",
+                return_value=None,
+            ),
+            patch.object(
+                balance_manager,
+                "delete_transaction_by_id",
+            ) as delete_transaction_by_id,
         ):
-            balance_manager.delete_transaction()
+            balance_manager.delete_transaction(connection)
 
-        self.assertIn("1", balance_manager.data["transactions"])
-        self.assertIn("2", balance_manager.data["transactions"])
-        saving.assert_not_called()
-
-    def test_remove_transaction_deletes_existing_transaction(self):
-        with patch.object(balance_manager, "saving") as saving:
-            result = balance_manager.remove_transaction("2")
-
-        self.assertTrue(result)
-        self.assertNotIn("2", balance_manager.data["transactions"])
-        saving.assert_called_once()
-
-    def test_remove_transaction_rejects_missing_transaction(self):
-        with patch.object(balance_manager, "saving") as saving:
-            result = balance_manager.remove_transaction("999")
-
-        self.assertFalse(result)
-        self.assertIn("1", balance_manager.data["transactions"])
-        self.assertIn("2", balance_manager.data["transactions"])
-        saving.assert_not_called()
+        delete_transaction_by_id.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -30,15 +30,6 @@ def get_current_datetime():
 
 
 # Core transaction operations
-def remove_transaction(transaction_id):
-    if transaction_id not in data["transactions"]:
-        return False
-
-    del data["transactions"][transaction_id]
-    saving()
-    return True
-
-
 def calculate_balance(data):
     balance = 0
     for item in data["transactions"].values():
@@ -112,10 +103,10 @@ def add(connection):
     )
 
 
-def selecting_transaction(connection):
+def selecting_transaction(connection, action):
     while True:
         transaction_id = input(
-            "Which transaction would you like to edit?\nPress X to return.\n>"
+            f"Which transaction would you like to {action}?\nPress X to return.\n>"
         )
         if transaction_id.strip().lower() == "x":
             return None
@@ -162,7 +153,7 @@ def selecting_field(connection, transaction_id):
 
 
 def edit(connection):
-    selected = selecting_transaction(connection)
+    selected = selecting_transaction(connection, "edit")
     if selected is None:
         return
 
@@ -175,18 +166,17 @@ def edit(connection):
     selecting_field(connection, transaction_id)
 
 
-def delete_transaction():
-    transaction_id = input(
-        "Which transaction would you like to delete?\nPress X to return\nTransaction ID:"
-    ).strip()
-    while True:
-        if transaction_id.lower() == "x":
-            return
-        transaction = data["transactions"].get(transaction_id)
-        if transaction is None:
-            transaction_id = input("Transaction not found. Try again.\nTransaction ID:")
-            continue
-        break
+def delete_transaction(connection):
+    selected = selecting_transaction(connection, "delete")
+    if selected is None:
+        return
+
+    transaction_id, transaction = selected
+
+    print("=" * 21)
+    print(format_transaction(transaction))
+    print("=" * 21)
+
     while True:
         user_input = (
             input("Do you really want to delete this transaction?\n[Y/N]:")
@@ -194,7 +184,7 @@ def delete_transaction():
             .lower()
         )
         if user_input == "y":
-            remove_transaction(transaction_id)
+            delete_transaction_by_id(connection, transaction_id)
             break
         elif user_input == "n":
             break
@@ -207,7 +197,7 @@ def sub_menu(connection):
     show_transactions(connection)
     menu = {
         1: lambda: edit(connection),
-        2: delete_transaction,
+        2: lambda: delete_transaction(connection),
     }
     while True:
         user_input = get_int("1. Edit \n2. Delete \n3. Return\n>")

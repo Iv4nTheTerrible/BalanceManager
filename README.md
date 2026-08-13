@@ -1,6 +1,6 @@
 # BalanceManager
 
-BalanceManager is a command-line personal finance application written in Python. It records income and expenses in a local JSON file and calculates the user's current balance.
+BalanceManager is a personal finance application written in Python. It records income and expenses in a local SQLite database and includes both a desktop interface and a command-line interface.
 
 This project began as a Python learning exercise and is being developed gradually into a larger personal finance application.
 
@@ -12,7 +12,8 @@ This project began as a Python learning exercise and is being developed graduall
 - Edit transaction type, amount, description, and date
 - Delete transactions with confirmation
 - Validate menu choices, amounts, and transaction types
-- Save data locally in JSON format
+- Save data locally in SQLite
+- Use a desktop interface built with Tkinter
 - Automated tests for the main behavior
 
 ## Requirements
@@ -29,7 +30,13 @@ git clone https://github.com/Iv4nTheTerrible/BalanceManager.git
 cd BalanceManager
 ```
 
-Run the program:
+Run the desktop interface:
+
+```bash
+python desktop_ui.py
+```
+
+Run the command-line interface:
 
 ```bash
 python BalanceManager.py
@@ -41,13 +48,11 @@ Depending on your Python installation, the command may instead be:
 py BalanceManager.py
 ```
 
-The application creates `data.json` when it first saves a transaction.
+The application creates `balance_manager.db` automatically when it starts.
 
 ## Local data
 
-Transactions are stored in `data.json` on the user's computer. This file is ignored by Git so personal financial information is not accidentally committed to the repository.
-
-The repository includes `data.example.json` to demonstrate the expected data structure. It contains only fake example information and is not loaded by the application.
+Transactions are stored in `balance_manager.db` on the user's computer. This file is ignored by Git so personal financial information is not accidentally committed to the repository.
 
 ## Running the tests
 
@@ -57,8 +62,8 @@ Run the automated test suite with:
 python -m unittest -v
 ```
 
-The tests use temporary mock data and do not modify the user's real `data.json` file.
+The tests use in-memory databases and mock data. They do not modify the user's real `balance_manager.db` file.
 
 ## Current version
 
-Version 1.0 is the first complete command-line release. Future versions may introduce a database and graphical interface.
+Version 1.0 is the first complete command-line release. The current development branch adds SQLite storage and a Tkinter desktop interface.

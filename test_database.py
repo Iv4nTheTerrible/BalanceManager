@@ -8,6 +8,7 @@ from database import (
     update_transaction_field,
     delete_transaction_by_id,
     connect_database,
+    insert_account,
 )
 
 
@@ -22,6 +23,17 @@ class DatabaseTests(unittest.TestCase):
             FROM sqlite_master
             WHERE type = 'table'
             AND name = 'transactions'
+            """).fetchone()
+
+        self.assertIsNotNone(table)
+
+    def test_connect_database_creates_account_table(self):
+
+        table = self.connection.execute("""
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+            AND name = 'accounts'
             """).fetchone()
 
         self.assertIsNotNone(table)
@@ -229,6 +241,32 @@ class DatabaseTests(unittest.TestCase):
         )
 
         self.assertFalse(deleted)
+
+    def test_insert_account(self):
+        successful_creation = insert_account(
+            self.connection,
+            "Bank A",
+            600000,
+        )
+
+        account = self.connection.execute(
+            """
+            SELECT id, name, balance
+            FROM accounts
+            WHERE name = ?
+            """,
+            ("Bank A",),
+        ).fetchone()
+
+        self.assertTrue(successful_creation)
+        self.assertEqual(
+            account,
+            (
+                1,
+                "Bank A",
+                600000,
+            ),
+        )
 
     def tearDown(self):
         self.connection.close()

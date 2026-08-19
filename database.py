@@ -13,9 +13,20 @@ def create_transaction_table(connection):
         """)
 
 
+def create_account_table(connection):
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            balance INTEGER NOT NULL
+        )
+        """)
+
+
 def connect_database(database_path="balance_manager.db"):
     connection = sqlite3.connect(database_path)
     create_transaction_table(connection)
+    create_account_table(connection)
     return connection
 
 
@@ -108,6 +119,25 @@ def delete_transaction_by_id(connection, transaction_id):
         WHERE id = ?
         """,
         (transaction_id,),
+    )
+
+    connection.commit()
+    return cursor.rowcount > 0
+
+
+def insert_account(connection, name, balance):
+    cursor = connection.execute(
+        """
+        INSERT INTO accounts (
+        name,
+        balance
+        )
+        VALUES (?,?)
+        """,
+        (
+            name,
+            balance,
+        ),
     )
 
     connection.commit()

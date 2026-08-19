@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-import BalanceManager as balance_manager
+import cli as balance_manager
 
 
 class BalanceManagerTests(unittest.TestCase):

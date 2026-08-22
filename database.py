@@ -142,3 +142,65 @@ def insert_account(connection, name, balance):
 
     connection.commit()
     return cursor.rowcount > 0
+
+
+def get_accounts(connection):
+    return connection.execute("""
+        SELECT id , name, balance
+        FROM accounts
+        ORDER BY id DESC
+        """).fetchall()
+
+
+def get_account_by_id(connection, account_id):
+    return connection.execute(
+        """
+        SELECT id, name, balance
+        FROM accounts
+        WHERE id = ?
+        """,
+        (account_id,),
+    ).fetchone()
+
+
+def update_account_field(
+    connection,
+    account_id,
+    field,
+    new_value,
+):
+    allowed_fields = {
+        "name",
+        "balance",
+    }
+
+    if field not in allowed_fields:
+        return False
+
+    cursor = connection.execute(
+        f"""
+        UPDATE accounts
+        SET {field} = ?
+        WHERE id = ?
+        """,
+        (
+            new_value,
+            account_id,
+        ),
+    )
+
+    connection.commit()
+    return cursor.rowcount > 0
+
+
+def delete_account(connection, account_id):
+    cursor = connection.execute(
+        """
+        DELETE FROM accounts
+        WHERE id = ?
+        """,
+        (account_id,),
+    )
+
+    connection.commit()
+    return cursor.rowcount > 0

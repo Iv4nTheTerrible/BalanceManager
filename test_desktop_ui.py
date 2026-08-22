@@ -1,6 +1,6 @@
 import unittest
 
-from desktop_ui import validate_transaction_input
+from desktop_ui import validate_account_input, validate_transaction_input
 
 
 class DesktopUIValidationTests(unittest.TestCase):
@@ -44,6 +44,19 @@ class DesktopUIValidationTests(unittest.TestCase):
         )
 
         self.assertEqual(result[2], "")
+
+    def test_valid_account_input_is_normalized(self):
+        result = validate_account_input(" Physical Cash ", "50000")
+
+        self.assertEqual(result, ("Physical Cash", 50000))
+
+    def test_account_name_cannot_be_empty(self):
+        with self.assertRaisesRegex(ValueError, "name"):
+            validate_account_input("  ", "50000")
+
+    def test_account_balance_must_be_a_whole_number(self):
+        with self.assertRaisesRegex(ValueError, "whole number"):
+            validate_account_input("Physical Cash", "50.50")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,11 @@ from database import (
     update_transaction_field,
     delete_transaction_by_id,
     connect_database,
+    delete_account,
+    get_account_by_id,
+    get_accounts,
     insert_account,
+    update_account_field,
 )
 
 
@@ -267,6 +271,84 @@ class DatabaseTests(unittest.TestCase):
                 600000,
             ),
         )
+
+    def test_get_accounts_returns_newest_first(self):
+        insert_account(self.connection, "Bank A", 600000)
+        insert_account(self.connection, "Physical Cash", 50000)
+
+        accounts = get_accounts(self.connection)
+
+        self.assertEqual(
+            accounts,
+            [
+                (2, "Physical Cash", 50000),
+                (1, "Bank A", 600000),
+            ],
+        )
+
+    def test_get_account_by_id(self):
+        insert_account(self.connection, "Bank A", 600000)
+
+        account = get_account_by_id(self.connection, 1)
+
+        self.assertEqual(account, (1, "Bank A", 600000))
+
+    def test_get_account_by_id_non_valid_id(self):
+        account = get_account_by_id(self.connection, 999)
+
+        self.assertIsNone(account)
+
+    def test_update_account_field(self):
+        insert_account(self.connection, "Bank A", 600000)
+
+        updated = update_account_field(
+            self.connection,
+            1,
+            "balance",
+            590000,
+        )
+        account = get_account_by_id(self.connection, 1)
+
+        self.assertTrue(updated)
+        self.assertEqual(account, (1, "Bank A", 590000))
+
+    def test_update_account_field_non_valid_id(self):
+        updated = update_account_field(
+            self.connection,
+            999,
+            "balance",
+            590000,
+        )
+
+        self.assertFalse(updated)
+
+    def test_update_account_field_non_valid_field(self):
+        insert_account(self.connection, "Bank A", 600000)
+
+        updated = update_account_field(
+            self.connection,
+            1,
+            "currency",
+            "JPY",
+        )
+        account = get_account_by_id(self.connection, 1)
+
+        self.assertFalse(updated)
+        self.assertEqual(account, (1, "Bank A", 600000))
+
+    def test_delete_account(self):
+        insert_account(self.connection, "Bank A", 600000)
+
+        deleted = delete_account(self.connection, 1)
+        account = get_account_by_id(self.connection, 1)
+
+        self.assertTrue(deleted)
+        self.assertIsNone(account)
+
+    def test_delete_account_non_valid_id(self):
+        deleted = delete_account(self.connection, 999)
+
+        self.assertFalse(deleted)
 
     def tearDown(self):
         self.connection.close()

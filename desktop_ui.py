@@ -5,16 +5,20 @@ from tkinter import messagebox, ttk
 
 from database import (
     connect_database,
+    delete_account as delete_account_by_id,
     delete_transaction_by_id,
+    get_account_by_id,
     get_accounts,
     get_transaction_by_id,
     get_transactions,
     insert_account,
     insert_transaction,
-    update_transaction_field,
+    update_account_field,
+    update_transaction,
 )
 
 TRANSACTION_TYPES = ("income", "expense")
+NO_ACCOUNT_LABEL = "No account"
 
 
 def get_current_datetime():
@@ -56,8 +60,18 @@ def validate_account_input(name, balance_text):
     return name, balance
 
 
+def build_account_options(accounts):
+    options = {NO_ACCOUNT_LABEL: None}
+    for account_id, name, _balance in accounts:
+        label = name
+        if label == NO_ACCOUNT_LABEL:
+            label = f"{name} (ID {account_id})"
+        options[label] = account_id
+    return options
+
+
 class TransactionDialog(tk.Toplevel):
-    def __init__(self, parent, title, initial_values=None):
+    def __init__(self, parent, title, initial_values=None, account_options=None):
         super().__init__(parent)
         self.result = None
         self.title(title)
@@ -69,12 +83,26 @@ class TransactionDialog(tk.Toplevel):
             "",
             "",
             get_current_datetime(),
+            None,
+        )
+        if len(initial_values) == 4:
+            initial_values = (*initial_values, None)
+
+        self.account_options = account_options or {NO_ACCOUNT_LABEL: None}
+        selected_account = next(
+            (
+                label
+                for label, account_id in self.account_options.items()
+                if account_id == initial_values[4]
+            ),
+            NO_ACCOUNT_LABEL,
         )
 
         self.type_var = tk.StringVar(value=initial_values[0])
         self.amount_var = tk.StringVar(value=str(initial_values[1]))
         self.description_var = tk.StringVar(value=initial_values[2])
         self.date_var = tk.StringVar(value=initial_values[3])
+        self.account_var = tk.StringVar(value=selected_account)
         self.error_var = tk.StringVar()
 
         content = ttk.Frame(self, padding=20)
@@ -107,15 +135,24 @@ class TransactionDialog(tk.Toplevel):
         date_input = ttk.Entry(content, textvariable=self.date_var, width=30)
         date_input.grid(row=3, column=1, sticky="ew", pady=6)
 
+        ttk.Label(content, text="Account").grid(row=4, column=0, sticky="w", pady=6)
+        ttk.Combobox(
+            content,
+            textvariable=self.account_var,
+            values=tuple(self.account_options),
+            state="readonly",
+            width=28,
+        ).grid(row=4, column=1, sticky="ew", pady=6)
+
         ttk.Label(
             content,
             textvariable=self.error_var,
             foreground="#b42318",
             wraplength=280,
-        ).grid(row=4, column=0, columnspan=2, sticky="w", pady=(8, 2))
+        ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(8, 2))
 
         buttons = ttk.Frame(content)
-        buttons.grid(row=5, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        buttons.grid(row=6, column=0, columnspan=2, sticky="e", pady=(12, 0))
         ttk.Button(buttons, text="Cancel", command=self.destroy).pack(
             side="left", padx=(0, 8)
         )
@@ -135,7 +172,7 @@ class TransactionDialog(tk.Toplevel):
 
     def save(self):
         try:
-            self.result = validate_transaction_input(
+            transaction = validate_transaction_input(
                 self.type_var.get(),
                 self.amount_var.get(),
                 self.description_var.get(),
@@ -145,19 +182,24 @@ class TransactionDialog(tk.Toplevel):
             self.error_var.set(str(error))
             return
 
+        account_id = self.account_options[self.account_var.get()]
+        self.result = (*transaction, account_id)
         self.destroy()
 
 
 class AccountDialog(tk.Toplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, title, initial_values=None, on_save=None):
         super().__init__(parent)
         self.result = None
-        self.title("Add account")
+        self.on_save = on_save
+        self.title(title)
         self.resizable(False, False)
         self.transient(parent)
 
-        self.name_var = tk.StringVar()
-        self.balance_var = tk.StringVar(value="0")
+        initial_values = initial_values or ("", 0)
+
+        self.name_var = tk.StringVar(value=initial_values[0])
+        self.balance_var = tk.StringVar(value=str(initial_values[1]))
         self.error_var = tk.StringVar()
 
         content = ttk.Frame(self, padding=20)
@@ -205,14 +247,17 @@ class AccountDialog(tk.Toplevel):
 
     def save(self):
         try:
-            self.result = validate_account_input(
+            result = validate_account_input(
                 self.name_var.get(),
                 self.balance_var.get(),
             )
-        except ValueError as error:
+            if self.on_save is not None:
+                self.on_save(*result)
+        except (ValueError, sqlite3.IntegrityError) as error:
             self.error_var.set(str(error))
             return
 
+        self.result = result
         self.destroy()
 
 
@@ -321,7 +366,7 @@ class BalanceManagerApp:
         table_frame.columnconfigure(0, weight=1)
         table_frame.rowconfigure(0, weight=1)
 
-        columns = ("id", "type", "amount", "description", "date")
+        columns = ("id", "type", "amount", "description", "account", "date")
         self.tree = ttk.Treeview(
             table_frame,
             columns=columns,
@@ -332,11 +377,13 @@ class BalanceManagerApp:
         self.tree.heading("type", text="Type")
         self.tree.heading("amount", text="Amount")
         self.tree.heading("description", text="Description")
+        self.tree.heading("account", text="Account")
         self.tree.heading("date", text="Date")
         self.tree.column("id", width=55, minwidth=45, anchor="center", stretch=False)
         self.tree.column("type", width=100, minwidth=90, anchor="center", stretch=False)
         self.tree.column("amount", width=130, minwidth=100, anchor="e", stretch=False)
-        self.tree.column("description", width=360, minwidth=180)
+        self.tree.column("description", width=260, minwidth=150)
+        self.tree.column("account", width=150, minwidth=110)
         self.tree.column(
             "date", width=165, minwidth=145, anchor="center", stretch=False
         )
@@ -360,6 +407,14 @@ class BalanceManagerApp:
         ttk.Button(toolbar, text="Add account", command=self.add_account).pack(
             side="left"
         )
+        ttk.Button(toolbar, text="Edit selected", command=self.edit_account).pack(
+            side="left", padx=8
+        )
+        ttk.Button(
+            toolbar,
+            text="Delete selected",
+            command=self.delete_selected_account,
+        ).pack(side="left")
         ttk.Button(toolbar, text="Refresh", command=self.refresh).pack(side="right")
 
         self.accounts_empty_label = ttk.Label(
@@ -400,13 +455,25 @@ class BalanceManagerApp:
         )
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.accounts_tree.configure(yscrollcommand=scrollbar.set)
+        self.accounts_tree.bind(
+            "<Double-1>",
+            lambda _event: self.edit_account(),
+        )
 
     def refresh(self):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
         transactions = get_transactions(self.connection)
-        for transaction_id, transaction_type, amount, description, date in transactions:
+        for (
+            transaction_id,
+            transaction_type,
+            amount,
+            description,
+            date,
+            _account_id,
+            account_name,
+        ) in transactions:
             sign = "+" if transaction_type == "income" else "−"
             self.tree.insert(
                 "",
@@ -417,6 +484,7 @@ class BalanceManagerApp:
                     transaction_type.title(),
                     f"{sign}¥{amount:,}",
                     description,
+                    account_name or NO_ACCOUNT_LABEL,
                     date,
                 ),
             )
@@ -456,27 +524,98 @@ class BalanceManagerApp:
         )
 
     def add_account(self):
-        dialog = AccountDialog(self.root)
-        if dialog.result is None:
-            return
-
-        name, balance = dialog.result
-        try:
-            insert_account(
+        dialog = AccountDialog(
+            self.root,
+            "Add account",
+            on_save=lambda name, balance: insert_account(
                 self.connection,
                 name,
                 balance,
-            )
-        except sqlite3.IntegrityError:
-            messagebox.showerror(
-                "Account already exists",
-                "An account with that name already exists.",
-                parent=self.root,
-            )
+            ),
+        )
+        if dialog.result is None:
             return
 
         self.refresh()
         self.status_var.set("Account added")
+
+    def selected_account_id(self):
+        selection = self.accounts_tree.selection()
+        if not selection:
+            messagebox.showinfo(
+                "Select an account",
+                "Select an account from the list first.",
+                parent=self.root,
+            )
+            return None
+        return int(selection[0])
+
+    def edit_account(self):
+        account_id = self.selected_account_id()
+        if account_id is None:
+            return
+
+        account = get_account_by_id(self.connection, account_id)
+        if account is None:
+            messagebox.showerror(
+                "Account unavailable",
+                "That account no longer exists. The list will be refreshed.",
+                parent=self.root,
+            )
+            self.refresh()
+            return
+
+        _, name, balance = account
+
+        def save_account(updated_name, updated_balance):
+            update_account_field(
+                self.connection,
+                account_id,
+                "name",
+                updated_name,
+            )
+            update_account_field(
+                self.connection,
+                account_id,
+                "balance",
+                updated_balance,
+            )
+
+        dialog = AccountDialog(
+            self.root,
+            "Edit account",
+            (name, balance),
+            on_save=save_account,
+        )
+        if dialog.result is None:
+            return
+
+        self.refresh()
+        self.status_var.set("Account updated")
+
+    def delete_selected_account(self):
+        account_id = self.selected_account_id()
+        if account_id is None:
+            return
+
+        account = get_account_by_id(self.connection, account_id)
+        if account is None:
+            self.refresh()
+            return
+
+        _, name, balance = account
+        sign = "−" if balance < 0 else ""
+        confirmed = messagebox.askyesno(
+            "Delete account",
+            f"Permanently delete {name} with a balance of " f"{sign}¥{abs(balance):,}?",
+            parent=self.root,
+        )
+        if not confirmed:
+            return
+
+        delete_account_by_id(self.connection, account_id)
+        self.refresh()
+        self.status_var.set("Account deleted")
 
     def selected_transaction_id(self):
         selection = self.tree.selection()
@@ -490,18 +629,32 @@ class BalanceManagerApp:
         return int(selection[0])
 
     def add_transaction(self):
-        dialog = TransactionDialog(self.root, "Add transaction")
+        account_options = build_account_options(get_accounts(self.connection))
+        dialog = TransactionDialog(
+            self.root,
+            "Add transaction",
+            account_options=account_options,
+        )
         if dialog.result is None:
             return
 
-        transaction_type, amount, description, date = dialog.result
-        insert_transaction(
-            self.connection,
-            transaction_type,
-            amount,
-            description,
-            date,
-        )
+        transaction_type, amount, description, date, account_id = dialog.result
+        try:
+            insert_transaction(
+                self.connection,
+                transaction_type,
+                amount,
+                description,
+                date,
+                account_id,
+            )
+        except sqlite3.IntegrityError as error:
+            messagebox.showerror(
+                "Account unavailable",
+                str(error),
+                parent=self.root,
+            )
+            return
         self.refresh()
         self.status_var.set("Transaction added")
 
@@ -520,29 +673,49 @@ class BalanceManagerApp:
             self.refresh()
             return
 
-        _, transaction_type, amount, description, date = transaction
+        (
+            _,
+            transaction_type,
+            amount,
+            description,
+            date,
+            account_id,
+            _,
+        ) = transaction
+        account_options = build_account_options(get_accounts(self.connection))
         dialog = TransactionDialog(
             self.root,
             "Edit transaction",
-            (transaction_type, amount, description, date),
+            (transaction_type, amount, description, date, account_id),
+            account_options,
         )
         if dialog.result is None:
             return
 
-        updated_type, updated_amount, updated_description, updated_date = dialog.result
-        updates = {
-            "type": updated_type,
-            "amount": updated_amount,
-            "description": updated_description,
-            "date": updated_date,
-        }
-        for field, new_value in updates.items():
-            update_transaction_field(
+        (
+            updated_type,
+            updated_amount,
+            updated_description,
+            updated_date,
+            updated_account_id,
+        ) = dialog.result
+        try:
+            update_transaction(
                 self.connection,
                 transaction_id,
-                field,
-                new_value,
+                updated_type,
+                updated_amount,
+                updated_description,
+                updated_date,
+                updated_account_id,
             )
+        except sqlite3.IntegrityError as error:
+            messagebox.showerror(
+                "Account unavailable",
+                str(error),
+                parent=self.root,
+            )
+            return
 
         self.refresh()
         self.status_var.set("Transaction updated")
@@ -557,7 +730,7 @@ class BalanceManagerApp:
             self.refresh()
             return
 
-        _, transaction_type, amount, description, _ = transaction
+        _, transaction_type, amount, description, _, _, _ = transaction
         confirmed = messagebox.askyesno(
             "Delete transaction",
             f"Delete {transaction_type} “{description}” for ¥{amount:,}?",

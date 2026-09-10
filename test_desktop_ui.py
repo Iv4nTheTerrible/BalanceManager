@@ -1,9 +1,31 @@
 import unittest
 
-from desktop_ui import validate_account_input, validate_transaction_input
+from desktop_ui import (
+    NO_ACCOUNT_LABEL,
+    build_account_options,
+    validate_account_input,
+    validate_transaction_input,
+)
 
 
 class DesktopUIValidationTests(unittest.TestCase):
+    def test_account_options_map_display_names_to_ids(self):
+        accounts = [
+            (2, "Digital Wallet", 20000),
+            (1, "Cash", 50000),
+        ]
+
+        options = build_account_options(accounts)
+
+        self.assertEqual(
+            options,
+            {
+                NO_ACCOUNT_LABEL: None,
+                "Digital Wallet": 2,
+                "Cash": 1,
+            },
+        )
+
     def test_valid_transaction_input_is_normalized(self):
         result = validate_transaction_input(
             " Income ",

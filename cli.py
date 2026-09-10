@@ -19,7 +19,7 @@ def get_current_datetime():
 # Core transaction operations
 def calculate_balance(connection):
     balance = 0
-    for _, transaction_type, amount, _, _ in get_transactions(connection):
+    for _, transaction_type, amount, *_ in get_transactions(connection):
         if transaction_type == "income":
             balance += amount
         else:
@@ -58,9 +58,13 @@ def get_type():
 
 # CLI display helpers
 def format_transaction(transaction):
-    transaction_id, transaction_type, amount, description, date = transaction
+    transaction_id, transaction_type, amount, description, date, *account_data = (
+        transaction
+    )
+    account_name = account_data[1] if len(account_data) > 1 else None
+    account_text = account_name or "No account"
 
-    return f"ID: {transaction_id} \nType: {transaction_type} \nAmount: {amount} \nDescription: {description} \nDate: {date}"
+    return f"ID: {transaction_id} \nType: {transaction_type} \nAmount: {amount} \nDescription: {description} \nAccount: {account_text} \nDate: {date}"
 
 
 def show_transactions(connection):

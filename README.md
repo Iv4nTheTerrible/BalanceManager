@@ -1,69 +1,61 @@
 # BalanceManager
 
-BalanceManager is a personal finance application written in Python. It records income and expenses in a local SQLite database and includes both a desktop interface and a command-line interface.
+BalanceManager is a personal-finance learning project. Its **current, working
+application is written in Python**: a Tkinter desktop interface and a CLI use a
+local SQLite database to track accounts, income, and expenses.
 
-This project began as a Python learning exercise and is being developed gradually into a larger personal finance application.
+A separate **Flutter/Dart application is planned**, starting with Android and
+Windows. It will keep an active local database so viewing and editing work
+offline. Supabase synchronization and iOS support are later stages, not current
+features. There is no required Java backend. See [ROADMAP.md](ROADMAP.md) for the
+planned sequence and financial rules.
 
-## Features
+## What works today
 
-- Add income and expense transactions
-- View saved transactions
-- Calculate the current balance
-- Edit transaction type, amount, description, and date
-- Delete transactions with confirmation
-- Validate menu choices, amounts, and transaction types
-- Save data locally in SQLite
-- Use a desktop interface built with Tkinter
-- Automated tests for the main behavior
+- Create and edit accounts, and record income and expenses against them.
+- View transactions and account balances in the Tkinter desktop interface.
+- Edit and delete transactions.
+- Use the command-line interface for transaction operations.
+- Store data locally in SQLite.
+- Run automated tests for the current Python behavior.
 
-## Requirements
+The current application does **not** yet have transfers, balance adjustments,
+monthly reports, cloud synchronization, or a Flutter client.
 
-- Python 3.10 or newer
-- No third-party packages are required
+## Run the current Python application
 
-## Running the application
-
-Clone the repository and enter its directory:
+Requirements: Python 3.10 or newer. No third-party packages are required for
+the current Python app.
 
 ```bash
 git clone https://github.com/Iv4nTheTerrible/BalanceManager.git
 cd BalanceManager
-```
-
-Run the desktop interface:
-
-```bash
 python desktop_ui.py
 ```
 
-Run the command-line interface:
+To use the CLI instead:
 
 ```bash
-python BalanceManager.py
+python cli.py
 ```
 
-Depending on your Python installation, the command may instead be:
+On Windows, `py` may work in place of `python`. The application creates
+`balance_manager.db` when it starts. That file is ignored by Git; a Git commit
+does not back up personal finance data.
 
-```bash
-py BalanceManager.py
-```
-
-The application creates `balance_manager.db` automatically when it starts.
-
-## Local data
-
-Transactions are stored in `balance_manager.db` on the user's computer. This file is ignored by Git so personal financial information is not accidentally committed to the repository.
-
-## Running the tests
-
-Run the automated test suite with:
+## Tests
 
 ```bash
 python -m unittest -v
 ```
 
-The tests use in-memory databases and mock data. They do not modify the user's real `balance_manager.db` file.
+The existing tests use in-memory databases and mock data, not the user's
+`balance_manager.db` file.
 
-## Current version
+## Development direction
 
-Version 1.0 is the first complete command-line release. The current development branch adds SQLite storage and a Tkinter desktop interface.
+Keep the Python application available while building and verifying the Flutter
+replacement. The Flutter app will use local SQLite first, implement the agreed
+ledger and monthly-report behavior, and only then add Supabase synchronization.
+iOS remains a goal when macOS/Xcode access is available for building and
+testing; Android and Windows do not wait on that access.
